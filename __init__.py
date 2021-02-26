@@ -185,6 +185,7 @@ class OpenAccessWikiData():
         title_qual = self.pywikibot.Claim(repo, u'P1476')
         license_qual = self.pywikibot.Claim(repo, u'P275')
         operator_qual = self.pywikibot.Claim(repo, u'P137')
+        part_prop = self.pywikibot.Claim(repo, u'P361')
 
         instance_prop.addSources([url_qual, retrieved_qual])
         institution_prop.addSources([url_qual, retrieved_qual])
@@ -205,6 +206,7 @@ class OpenAccessWikiData():
         commons_prop.addQualifier(license_qual)
         commons_prop.addQualifier(operator_qual)
         commons_prop.addQualifier(image_url_qual)
+        part_prop.addSources([url_qual, retrieved_qual])
         
         item = self.pywikibot.ItemPage(repo)
 
@@ -225,8 +227,20 @@ class OpenAccessWikiData():
             accession_qual_prop.setTarget(institution_target)
             accession_number_prop.addQualifier(accession_qual_prop)
             claims.append(accession_number_prop)
+            if len(accession_number.split('.')) == 3:
+                
+                checkparent = requests.get('https://query.wikidata.org/sparql?query=SELECT%20DISTINCT%20%3FQid%20WHERE%20%7B%0A%20%20%3Fitem%20p%3AP217%20%3Fs%20.%0A%20%20%3Fs%20ps%3AP217%20"' + accession_number.split('.')[0] + '.' + accession_number.split('.')[1] + '".%0A%20%20%3Fs%20pq%3AP195%20wd%3AQ657415%20.%0A%20%20BIND%28SUBSTR%28STR%28%3Fitem%29%2C%2032%20%29%20AS%20%3FQid%29%0A%7D &format=json', headers=headers).text
 
+                try:
+                    parent = json.loads(checkparent)
+                except:
+                    return None
 
+                if len(parent['results']['bindings']) == 1:
+                    part_target = self.pywikibot.ItemPage(repo, parent['results']['bindings'][0]['Qid']['value'])
+                    part_prop.setTarget(part_target)
+                    claims.append(part_prop)
+                    
         except KeyError as e:
             #print("ERROR %s"%(e))
             output += e
@@ -372,6 +386,7 @@ class OpenAccessWikiData():
                 type_target = self.pywikibot.ItemPage(repo, entities['type'][artwork['type']])
                 type_prop.setTarget(type_target)
                 claims.append(type_prop)
+                claims.remove(instance_prop)
 
         if artwork['share_license_status'] == 'CC0':
             if artwork.get('images'):
@@ -388,16 +403,17 @@ class OpenAccessWikiData():
         else:
             label = title
                 
-        description = '(' + accession_number + ') ' + artwork['type'].lower() + ' by ' + author_target
+        description = artwork['type'].lower() + ' by ' + author_target + ' (' + accession_number + ')'
 
         if len(description) > 250:
-            description = description[:250]
+            desc_len = 250 - len(artwork['type'].lower() + ' by ' + ' (' + accession_number + ')')
+            description = artwork['type'].lower() + ' by ' + author_target[:desc_len] + ' (' + accession_number + ')'
         else:
             pass
         claimlist = []
         for claim in claims:
             claimlist.append(claim.toJSON())
-        data = {'labels': {'en': label}, 'descriptions': {'en': 'artwork in the Cleveland Museum of Art\'s collection (%s)'%(accession_number)}, 'claims': claimlist}
+        data = {'labels': {'en': label}, 'descriptions': {'en': description}, 'claims': claimlist}
         items.append((data, accession_number, label))
         item_return = None
         for newitem, accession_number, label in items:
@@ -456,15 +472,15 @@ class OpenAccessWikiData():
                         item.editLabels(labels={'en': label }, summary='Synchronizing Wikidata label with Cleveland Museum of Art data: accession number ' + accession_number + '.')
                         output += '\n\tSynchronizing changes to label for ' + str(item) + ': ' + label
                         #print('Synchronizing changes to label for ' + str(item) + ': ' + label)
-                try:
-                    if item.get()['descriptions']['en'] != description:
-                        item.editDescriptions(descriptions={'en': description }, summary='Synchronizing Wikidata description with Cleveland Museum of Art data: accession number ' + accession_number + '.')
-                        output += '\n\tSynchronizing changes to description for ' + str(item) + ': ' + label
-                        #print('Synchronizing changes to description for ' + str(item) + ': ' + label)
-                except:
-                    if not item.get()['descriptions'].get('en'):
-                        item.editDescriptions(descriptions={'en': description }, summary='Synchronizing Wikidata description with Cleveland Museum of Art data: accession number ' + accession_number + '.')
-                        output += '\n\tSynchronizing changes to description for ' + str(item) + ': ' + label
+#                 try:
+#                 if item.get()['descriptions']['en'] != description:
+#                     item.editDescriptions(descriptions={'en': description }, summary='Synchronizing Wikidata description with Cleveland Museum of Art data: accession number ' + accession_number + '.')
+#                     output += '\n\tSynchronizing changes to description for ' + str(item) + ': ' + label
+#                         #print('Synchronizing changes to description for ' + str(item) + ': ' + label)
+#                 except:
+                if not item.get()['descriptions'].get('en'):
+                    item.editDescriptions(descriptions={'en': description }, summary='Synchronizing Wikidata description with Cleveland Museum of Art data: accession number ' + accession_number + '.')
+                    output += '\n\tSynchronizing changes to description for ' + str(item) + ': ' + label
                         #print('Synchronizing changes to description for ' + str(item) + ': ' + label)
 
                 clms = []
@@ -495,4 +511,3 @@ class OpenAccessWikiData():
                         #print('Synchronizing missing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label)
         
         return output, item_return
-
