@@ -187,6 +187,7 @@ class OpenAccessWikiData():
         operator_qual = self.pywikibot.Claim(repo, u'P137')
         part_prop = self.pywikibot.Claim(repo, u'P361')
         location_prop = self.pywikibot.Claim(repo, u'P276')
+        circum_qual = self.pywikibot.Claim(repo, u'P1480')
 
         instance_prop.addSources([url_qual, retrieved_qual])
         institution_prop.addSources([url_qual, retrieved_qual])
@@ -226,6 +227,9 @@ class OpenAccessWikiData():
         location_target = self.pywikibot.ItemPage(repo, u'Q657415')
         location_prop.setTarget(location_target)
         claims.append(location_prop)
+        
+        circum_target = self.pywikibot.ItemPage(repo, u'Q5727902')
+        circum_qual.setTarget(circum_target)
         
         try:
             accession_number = artwork['accession_number']
@@ -292,6 +296,13 @@ class OpenAccessWikiData():
                 claims.append(created_prop)
         else:
             created_target = ''
+        datecheck = re.match(r'^c\. ([0-9]{1,4})$', artwork['creation_date'])
+        if datecheck:
+            created_target = self.pywikibot.WbTime(year=datecheck.groups(1))
+            created_prop.setTarget(created_target)
+            created_prop.addQualifier(circum_prop)
+            claims.append(created_prop)
+            
         author_target = 'unknown artist'
         if len(artwork['creators']) > 0:
             author_target = ''
