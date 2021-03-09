@@ -186,6 +186,7 @@ class OpenAccessWikiData():
         license_qual = self.pywikibot.Claim(repo, u'P275')
         operator_qual = self.pywikibot.Claim(repo, u'P137')
         part_prop = self.pywikibot.Claim(repo, u'P361')
+        location_prop = self.pywikibot.Claim(repo, u'P276')
 
         instance_prop.addSources([url_qual, retrieved_qual])
         institution_prop.addSources([url_qual, retrieved_qual])
@@ -207,6 +208,7 @@ class OpenAccessWikiData():
         commons_prop.addQualifier(operator_qual)
         commons_prop.addQualifier(image_url_qual)
         part_prop.addSources([url_qual, retrieved_qual])
+        location_prop.addSources([url_qual, retrieved_qual])
         
         item = self.pywikibot.ItemPage(repo)
 
@@ -214,11 +216,17 @@ class OpenAccessWikiData():
         claims = []
 
         # Parsing data from CMA into statements.
+        
         institution_target = self.pywikibot.ItemPage(repo, u'Q657415')
         #this line fails on the test server...
         institution_prop.setTarget(institution_target)
         claims.append(institution_prop)
         #print(artwork)
+        
+        location_target = self.pywikibot.ItemPage(repo, u'Q657415')
+        location_prop.setTarget(location_target)
+        claims.append(location_prop)
+        
         try:
             accession_number = artwork['accession_number']
             #print(str(counter) + ': ' + accession_number)
