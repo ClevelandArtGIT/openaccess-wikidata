@@ -411,11 +411,11 @@ class OpenAccessWikiData():
         else:
             label = title
                 
-        description = artwork['type'].lower() + ' by ' + author_target + ' (' + accession_number + ')'
+        description = artwork['type'].lower() + ' by ' + author_target
 
         if len(description) > 250:
-            desc_len = 250 - len(artwork['type'].lower() + ' by ' + ' (' + accession_number + ')')
-            description = artwork['type'].lower() + ' by ' + author_target[:desc_len] + ' (' + accession_number + ')'
+            desc_len = 250 - len(artwork['type'].lower() + ' by '
+            description = artwork['type'].lower() + ' by ' + author_target[:desc_len]
         else:
             pass
         claimlist = []
