@@ -246,7 +246,7 @@ class OpenAccessWikiData():
                 try:
                     parent = json.loads(checkparent)
                     if len(parent['results']['bindings']) == 1:
-                        part_target = pywikibot.ItemPage(repo, parent['results']['bindings'][0]['Qid']['value'])
+                        part_target = self.pywikibot.ItemPage(repo, parent['results']['bindings'][0]['Qid']['value'])
                         part_prop.setTarget(part_target)
                         claims.append(part_prop)
                 except:
