@@ -245,13 +245,12 @@ class OpenAccessWikiData():
 
                 try:
                     parent = json.loads(checkparent)
+                    if len(parent['results']['bindings']) == 1:
+                        part_target = pywikibot.ItemPage(repo, parent['results']['bindings'][0]['Qid']['value'])
+                        part_prop.setTarget(part_target)
+                        claims.append(part_prop)
                 except:
-                    return None
-
-                if len(parent['results']['bindings']) == 1:
-                    part_target = self.pywikibot.ItemPage(repo, parent['results']['bindings'][0]['Qid']['value'])
-                    part_prop.setTarget(part_target)
-                    claims.append(part_prop)
+                    pass
                     
         except KeyError as e:
             #print("ERROR %s"%(e))
@@ -296,12 +295,13 @@ class OpenAccessWikiData():
                 claims.append(created_prop)
         else:
             created_target = ''
-        datecheck = re.match(r'^c\. ([0-9]{1,4})$', artwork['creation_date'])
-        if datecheck:
-            created_target = self.pywikibot.WbTime(year=datecheck.groups(1))
-            created_prop.setTarget(created_target)
-            created_prop.addQualifier(circum_prop)
-            claims.append(created_prop)
+        if artwork['creation_date']:
+            datecheck = re.match(r'^c\. ([0-9]{1,4})$', artwork['creation_date'])
+            if datecheck:
+                created_target = self.pywikibot.WbTime(year=datecheck.groups(1))
+                created_prop.setTarget(created_target)
+                created_prop.addQualifier(circum_prop)
+                claims.append(created_prop)
             
         author_target = 'unknown artist'
         if len(artwork['creators']) > 0:
@@ -425,10 +425,9 @@ class OpenAccessWikiData():
         description = artwork['type'].lower() + ' by ' + author_target
 
         if len(description) > 250:
-            desc_len = 250 - len(artwork['type'].lower() + ' by '
+            desc_len = 250 - len(artwork['type'].lower() + ' by ')
             description = artwork['type'].lower() + ' by ' + author_target[:desc_len]
-        else:
-            pass
+            
         claimlist = []
         for claim in claims:
             claimlist.append(claim.toJSON())
@@ -498,9 +497,12 @@ class OpenAccessWikiData():
 #                         #print('Synchronizing changes to description for ' + str(item) + ': ' + label)
 #                 except:
                 if not item.get()['descriptions'].get('en'):
-                    item.editDescriptions(descriptions={'en': description }, summary='Synchronizing Wikidata description with Cleveland Museum of Art data: accession number ' + accession_number + '.')
-                    output += '\n\tSynchronizing changes to description for ' + str(item) + ': ' + label
-                        #print('Synchronizing changes to description for ' + str(item) + ': ' + label)
+                    try:
+                        item.editDescriptions(descriptions={'en': description }, summary='Synchronizing Wikidata description with Cleveland Museum of Art data: accession number ' + accession_number + '.')
+#                             print('Synchronizing changes to description for ' + str(item) + ': ' + label)
+                    except:
+                        item.editDescriptions(descriptions={'en': description + '(' + accession_number + ')' }, summary='Synchronizing Wikidata description with Cleveland Museum of Art data: accession number ' + accession_number + '.')
+#                             print('Synchronizing changes to description for ' + str(item) + ': ' + label)
 
                 clms = []
                 for prop in item.get()['claims']:
