@@ -527,8 +527,17 @@ class OpenAccessWikiData():
 
                     stmnt_compare = stmnt.toJSON()
                     if not stmnt_compare['mainsnak'] in clms:
+                        if item.claims.get(stmnt_compare['mainsnak']['property']):
+                            for p in item.claims[stmnt_compare['mainsnak']['property']]:
+                                if p.toJSON().get('references'):
+                                    for ref in p.toJSON()['references']:
+                                        if(ref['snaks'].get('P854')):
+                                            for url in ref['snaks']['P854']:
+                                                if url['datavalue']['value'] == 'https://clevelandart.org/art/' + accession_number:
+                                                    item.removeClaims(p, summary=u'Removing outdated statement.')
+                                                    output += '\n\tRemoving outdated \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label
                         item.addClaim(stmnt, summary='Synchronizing Wikidata statement with Cleveland Museum of Art data: accession number ' + accession_number + '.')
-                        output += '\n\tSynchronizing missing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label
-                        #print('Synchronizing missing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label)
+                        output += '\n\tSynchronizing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label
+                        #print('Synchronizing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label)
         
         return output, item_return
