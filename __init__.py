@@ -239,7 +239,7 @@ class OpenAccessWikiData():
             accession_qual_prop.setTarget(institution_target)
             accession_number_prop.addQualifier(accession_qual_prop)
             claims.append(accession_number_prop)
-            if len(accession_number.split('.')) == 3:
+            if len(accession_number.split('.')) > 2:
                 
                 checkparent = requests.get('https://query.wikidata.org/sparql?query=SELECT%20DISTINCT%20%3FQid%20WHERE%20%7B%0A%20%20%3Fitem%20p%3AP217%20%3Fs%20.%0A%20%20%3Fs%20ps%3AP217%20"' + accession_number.split('.')[0] + '.' + accession_number.split('.')[1] + '".%0A%20%20%3Fs%20pq%3AP195%20wd%3AQ657415%20.%0A%20%20BIND%28SUBSTR%28STR%28%3Fitem%29%2C%2032%20%29%20AS%20%3FQid%29%0A%7D &format=json', headers=headers).text
 
@@ -298,9 +298,9 @@ class OpenAccessWikiData():
         if artwork['creation_date']:
             datecheck = re.match(r'^c\. ([0-9]{1,4})$', artwork['creation_date'])
             if datecheck:
-                created_target = self.pywikibot.WbTime(year=datecheck.groups(1))
+                created_target = self.pywikibot.WbTime(year=int(datecheck.group(1)))
                 created_prop.setTarget(created_target)
-                created_prop.addQualifier(circum_prop)
+                created_prop.addQualifier(circum_qual)
                 claims.append(created_prop)
             
         author_target = 'unknown artist'
@@ -527,8 +527,17 @@ class OpenAccessWikiData():
 
                     stmnt_compare = stmnt.toJSON()
                     if not stmnt_compare['mainsnak'] in clms:
+                        if item.claims.get(stmnt_compare['mainsnak']['property']):
+                            for p in item.claims[stmnt_compare['mainsnak']['property']]:
+                                if p.toJSON().get('references'):
+                                    for ref in p.toJSON()['references']:
+                                        if(ref['snaks'].get('P854')):
+                                            for url in ref['snaks']['P854']:
+                                                if url['datavalue']['value'] == 'https://clevelandart.org/art/' + accession_number:
+                                                    item.removeClaims(p, summary=u'Removing outdated statement.')
+                                                    output += '\n\tRemoving outdated \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label
                         item.addClaim(stmnt, summary='Synchronizing Wikidata statement with Cleveland Museum of Art data: accession number ' + accession_number + '.')
-                        output += '\n\tSynchronizing missing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label
-                        #print('Synchronizing missing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label)
+                        output += '\n\tSynchronizing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label
+                        #print('Synchronizing \'' + str(stmnt.toJSON()['mainsnak']['property'])  + '\' claim for ' + str(item) + ': ' + label)
         
         return output, item_return
