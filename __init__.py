@@ -307,6 +307,12 @@ class OpenAccessWikiData():
                 created_prop.setTarget(created_target)
                 created_prop.addQualifier(circum_qual)
                 claims.append(created_prop)
+            datecheck = re.match(r'^c\. ([0-9]{1,4}) BC$', artwork['creation_date'])
+            if datecheck:
+                created_target = self.pywikibot.WbTime(year=-1*int(datecheck.group(1)))
+                created_prop.setTarget(created_target)
+                created_prop.addQualifier(circum_qual)
+                claims.append(created_prop)
             
         author_target = 'unknown artist'
         if len(artwork['creators']) > 0:
