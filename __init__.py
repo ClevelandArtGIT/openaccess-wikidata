@@ -185,9 +185,9 @@ class OpenAccessWikiData():
         title_qual = self.pywikibot.Claim(repo, u'P1476')
         license_qual = self.pywikibot.Claim(repo, u'P275')
         operator_qual = self.pywikibot.Claim(repo, u'P137')
-        part_prop = self.pywikibot.Claim(repo, u'P361')
-        location_prop = self.pywikibot.Claim(repo, u'P276')
-        circum_qual = self.pywikibot.Claim(repo, u'P1480')
+        part_prop = self.pywikibot.Claim(repo, u'P361') # if part/component
+        location_prop = self.pywikibot.Claim(repo, u'P276') # always CMA
+        circum_qual = self.pywikibot.Claim(repo, u'P1480') # new qualifier for 'circa'
         lang_qual = self.pywikibot.Claim(repo, u'P407')
 
         instance_prop.addSources([url_qual, retrieved_qual])
@@ -210,8 +210,8 @@ class OpenAccessWikiData():
         commons_prop.addQualifier(license_qual)
         commons_prop.addQualifier(operator_qual)
         commons_prop.addQualifier(image_url_qual)
-        part_prop.addSources([url_qual, retrieved_qual])
-        location_prop.addSources([url_qual, retrieved_qual])
+        part_prop.addSources([url_qual, retrieved_qual]) # link to collection online
+        location_prop.addSources([url_qual, retrieved_qual]) # link to collection online
         
         item = self.pywikibot.ItemPage(repo)
 
@@ -226,10 +226,12 @@ class OpenAccessWikiData():
         claims.append(institution_prop)
         #print(artwork)
         
+        # pre-populated as CMA
         location_target = self.pywikibot.ItemPage(repo, u'Q657415')
         location_prop.setTarget(location_target)
         claims.append(location_prop)
         
+        # just the circa
         circum_target = self.pywikibot.ItemPage(repo, u'Q5727902')
         circum_qual.setTarget(circum_target)
         
@@ -300,6 +302,8 @@ class OpenAccessWikiData():
                 claims.append(created_prop)
         else:
             created_target = ''
+
+        # put circa date as created date and add circa
         if artwork['creation_date']:
             datecheck = re.match(r'^c\. ([0-9]{1,4})$', artwork['creation_date'])
             if datecheck:
@@ -416,7 +420,7 @@ class OpenAccessWikiData():
                 type_target = self.pywikibot.ItemPage(repo, entities['type'][artwork['type']])
                 type_prop.setTarget(type_target)
                 claims.append(type_prop)
-                claims.remove(instance_prop)
+                claims.remove(instance_prop) # if there's a type field, don't include 'instance of'
 
         if artwork['share_license_status'] == 'CC0':
             if artwork.get('images'):
@@ -507,6 +511,9 @@ class OpenAccessWikiData():
 #                     output += '\n\tSynchronizing changes to description for ' + str(item) + ': ' + label
 #                         #print('Synchronizing changes to description for ' + str(item) + ': ' + label)
 #                 except:
+
+                # don't edit description if there already is one
+                # add accession number to description if label + description pair isn't unique
                 if not item.get()['descriptions'].get('en'):
                     try:
                         item.editDescriptions(descriptions={'en': description }, summary='Synchronizing Wikidata description with Cleveland Museum of Art data: accession number ' + accession_number + '.')
