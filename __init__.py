@@ -188,11 +188,13 @@ class OpenAccessWikiData():
         part_prop = self.pywikibot.Claim(repo, u'P361')
         location_prop = self.pywikibot.Claim(repo, u'P276')
         circum_qual = self.pywikibot.Claim(repo, u'P1480')
+        lang_qual = self.pywikibot.Claim(repo, u'P407')
 
         instance_prop.addSources([url_qual, retrieved_qual])
         institution_prop.addSources([url_qual, retrieved_qual])
         accession_number_prop.addSources([url_qual, retrieved_qual])
         title_prop.addSources([url_qual, retrieved_qual])
+        commons_prop.addQualifier(lang_qual)
         url_prop.addSources([url_qual, retrieved_qual])
         copyright_prop.addSources([url_qual, retrieved_qual])
         license_prop.addSources([url_qual, retrieved_qual])
@@ -230,6 +232,9 @@ class OpenAccessWikiData():
         
         circum_target = self.pywikibot.ItemPage(repo, u'Q5727902')
         circum_qual.setTarget(circum_target)
+        
+        lang_target = self.pywikibot.ItemPage(repo, u'Q1860')
+        lang_qual.setTarget(lang_target)
         
         try:
             accession_number = artwork['accession_number']
@@ -299,6 +304,12 @@ class OpenAccessWikiData():
             datecheck = re.match(r'^c\. ([0-9]{1,4})$', artwork['creation_date'])
             if datecheck:
                 created_target = self.pywikibot.WbTime(year=int(datecheck.group(1)))
+                created_prop.setTarget(created_target)
+                created_prop.addQualifier(circum_qual)
+                claims.append(created_prop)
+            datecheck = re.match(r'^c\. ([0-9]{1,4}) BC$', artwork['creation_date'])
+            if datecheck:
+                created_target = self.pywikibot.WbTime(year=-1*int(datecheck.group(1)))
                 created_prop.setTarget(created_target)
                 created_prop.addQualifier(circum_qual)
                 claims.append(created_prop)
