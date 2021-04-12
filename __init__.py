@@ -194,7 +194,7 @@ class OpenAccessWikiData():
         institution_prop.addSources([url_qual, retrieved_qual])
         accession_number_prop.addSources([url_qual, retrieved_qual])
         title_prop.addSources([url_qual, retrieved_qual])
-        commons_prop.addQualifier(lang_qual)
+        url_prop.addQualifier(lang_qual)
         url_prop.addSources([url_qual, retrieved_qual])
         copyright_prop.addSources([url_qual, retrieved_qual])
         license_prop.addSources([url_qual, retrieved_qual])
